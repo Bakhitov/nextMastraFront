@@ -1,0 +1,16 @@
+{
+  "users": [
+    {
+      "id": "23d0c8aa-984a-4305-9208-b5dab425a5e8",
+      "email": "test@test.com",
+      "passwordHash": "$2a$10$AW1hhfFjJJCDeOaVbSV0L.I14mGxB4qg1S6kbWvCfh/m5pfR7xS4K"
+    },
+    {
+      "id": "cf4f8e30-2196-4d5a-9a40-09e5f9fa4660",
+      "email": "bakhitov.akhan@gmail.com",
+      "passwordHash": "$2a$10$aEuT12eTdGMMUTiRhIoSU.fcOukx8SZGNo6gj9JR5g30LCKNKbWa6"
+    }
+  ]
+}
+
+

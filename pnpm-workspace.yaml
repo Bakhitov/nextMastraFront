@@ -1,0 +1,6 @@
+packages:
+  - front/*
+  - extension
+  - mastra
+
+

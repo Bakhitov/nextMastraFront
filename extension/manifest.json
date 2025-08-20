@@ -1,0 +1,43 @@
+{
+  "manifest_version": 3,
+  "name": "Agent n8n",
+  "version": "0.1.0",
+  "icons": {
+    "16": "icons/n8n-icon.svg",
+    "32": "icons/n8n-icon.svg",
+    "48": "icons/n8n-icon.svg",
+    "128": "icons/n8n-icon.svg"
+  },
+  "action": {
+    "default_title": "Agent n8n",
+    "default_icon": {
+      "16": "icons/n8n-icon.svg",
+      "32": "icons/n8n-icon.svg",
+      "48": "icons/n8n-icon.svg",
+      "128": "icons/n8n-icon.svg"
+    }
+  },
+  "side_panel": { "default_path": "popup.html" },
+  "background": { "service_worker": "src/background.ts" },
+  "permissions": ["storage", "activeTab", "scripting", "contextMenus"],
+  "host_permissions": [
+    "https://n8n.srv945365.hstgr.cloud/*",
+    "http://localhost:3000/*"
+  ],
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["src/content.ts"],
+      "run_at": "document_end",
+      "all_frames": false
+    }
+  ],
+  "web_accessible_resources": [
+    {
+      "resources": ["popup.html", "index.html", "src/styles.css", "icons/n8n-icon.svg"],
+      "matches": ["<all_urls>"]
+    }
+  ]
+}
+
+
