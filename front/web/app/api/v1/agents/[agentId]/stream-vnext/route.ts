@@ -26,7 +26,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ agentId
     const agent = mastraClient.getAgent(agentId);
     // Пытаемся использовать vNext, если доступен в текущей версии SDK; иначе фолбэк на обычный stream
     const maybeStreamVNext = (agent as any)?.streamVNext as
-      | ((args: { messages: any; memory: any; savePerStep?: boolean }) => Promise<Response>)
+      | ((args: { messages: any; memory: any; savePerStep?: boolean; runtimeContext?: any; headers?: Record<string, string> }) => Promise<Response>)
       | undefined;
     // runtimeContext из профиля пользователя для динамичных настроек
     const { redisGetJSON, redisSetJSON } = await import("../../../../../../lib/redis/client");
