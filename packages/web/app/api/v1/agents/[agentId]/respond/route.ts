@@ -34,6 +34,7 @@ export async function POST(req: Request, { params }: any) {
       threadId,
       resourceId,
       headers: {
+        ...(process.env.MASTRA_INTERNAL_SECRET ? { 'x-internal-secret': process.env.MASTRA_INTERNAL_SECRET } : {}),
         "x-provider-llm": (profile as any)?.provider_llm || "",
         "x-api-key-llm": (profile as any)?.api_key_llm || "",
         "x-model-llm": (profile as any)?.model_llm || "",

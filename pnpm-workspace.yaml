@@ -1,6 +1,5 @@
 packages:
-  - front/*
+  - packages/*
   - extension
-  - mastra
 
 

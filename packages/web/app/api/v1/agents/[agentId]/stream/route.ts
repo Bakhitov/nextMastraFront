@@ -46,6 +46,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ agentId
       memory,
       savePerStep: true,
       headers: {
+        ...(process.env.MASTRA_INTERNAL_SECRET ? { 'x-internal-secret': process.env.MASTRA_INTERNAL_SECRET } : {}),
         "x-provider-llm": (profile as any)?.provider_llm || "",
         "x-api-key-llm": (profile as any)?.api_key_llm || "",
         "x-model-llm": (profile as any)?.model_llm || "",
@@ -56,8 +57,10 @@ export async function POST(req: Request, { params }: { params: Promise<{ agentId
     });
     const headers = new Headers(upstream.headers);
     if (!headers.get("content-type")) headers.set("content-type", "text/event-stream");
-    headers.set("cache-control", "no-cache");
+    headers.set("cache-control", "no-cache, no-transform");
     headers.set("connection", "keep-alive");
+    headers.set("x-accel-buffering", "no");
+    headers.set("keep-alive", "timeout=120, max=1000");
     return new Response(upstream.body, { status: upstream.status, headers });
   } catch (e: any) {
     const status = e?.status === 429 ? 429 : 400;

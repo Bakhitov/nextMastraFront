@@ -41,12 +41,10 @@ body {
 .messages {
   padding: 20px;
   overflow-y: auto;
-  display: grid;
   gap: 16px;
 }
 
 .message {
-  display: grid;
   gap: 8px;
 }
 .bubble {
@@ -57,8 +55,8 @@ body {
   max-width: 85%;
   white-space: pre-wrap;
 }
-.user .bubble { background: rgba(59,130,246,0.15); border: 1px solid rgba(59,130,246,0.2); }
-.assistant .bubble { background: rgba(255,255,255,0.04); border: 1px solid var(--border); }
+.user .bubble { background: rgba(59,130,246,0.15);}
+.assistant .bubble { background: rgba(255,255,255,0.04);}
 .meta { color: var(--muted); font-size: 12px; }
 
 .input {

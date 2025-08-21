@@ -19,8 +19,24 @@ export default function Register() {
     setError(null);
     try {
       await api.post("/api/v1/register", { email, password });
-      await storage.setItems({ "just-registered": true });
-      navigate("/settings", { replace: true });
+      // Авто-вход после регистрации (Variant A)
+      try {
+        const data = await api.post<{ accessToken: string; user: { id: string; email: string } }>(
+          "/api/v1/auth/login",
+          { email, password }
+        );
+        await storage.setItems({
+          accessToken: data.accessToken,
+          "sb-access-token": data.accessToken,
+          user: data.user,
+          "just-registered": true,
+        });
+        navigate("/settings", { replace: true });
+      } catch (e: any) {
+        // Если автологин не удался (например, требуется подтверждение email)
+        await storage.setItems({ "just-registered": true });
+        navigate("/auth/login", { replace: true });
+      }
     } catch (e: any) {
       setError("Не удалось зарегистрировать пользователя");
     } finally {

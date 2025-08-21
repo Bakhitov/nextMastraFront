@@ -13,10 +13,21 @@ export async function verifyRequest(req: Request): Promise<JwtPayload> {
   const supabase = createClient(base, anon, { auth: { persistSession: false } });
   const { data, error } = await supabase.auth.getUser(token);
   if (error || !data?.user) throw new Error("Unauthorized");
+  // Try cache role first
   let role: string | undefined;
   try {
-    const { data: profile } = await supabase.from("mastra_users").select("role").eq("id", data.user.id).maybeSingle();
-    role = (profile as any)?.role as string | undefined;
+    const redis = getRedis();
+    const cacheKey = `role:${data.user.id}`;
+    const cached = redis ? await redis.get(cacheKey) : null;
+    if (cached) {
+      role = cached || undefined;
+    } else {
+      const { data: profile } = await supabase.from("mastra_users").select("role").eq("id", data.user.id).maybeSingle();
+      role = (profile as any)?.role as string | undefined;
+      if (redis && role) {
+        await redis.set(cacheKey, role, "EX", 60); // cache 60s
+      }
+    }
   } catch {}
   return { sub: data.user.id, email: data.user.email ?? undefined, role };
 }
@@ -25,7 +36,15 @@ export async function verifyRequest(req: Request): Promise<JwtPayload> {
 const redis = getRedis();
 
 export async function rateLimitFreeOrThrow(userId: string, limit = 20, windowSec = 60) {
-  if (!redis) return; // no redis configured → skip
+  if (!redis) {
+    // In production, Redis is required for rate limiting
+    if (process.env.NODE_ENV === 'production') {
+      const err: any = new Error("Server misconfiguration: Redis is required");
+      err.status = 500;
+      throw err;
+    }
+    return; // dev: skip
+  }
   const now = Math.floor(Date.now() / 1000);
   const window = Math.floor(now / windowSec);
   const key = `rl:${userId}:${window}`;

@@ -19,6 +19,7 @@ export default function ChatThread() {
   const [loading, setLoading] = useState(false);
   const scrollRef = useRef<HTMLDivElement | null>(null);
   const assistantIdRef = useRef<string | null>(null);
+  const abortRef = useRef<AbortController | null>(null);
   const [title, setTitle] = useState<string>("Чат");
   const [atBottom, setAtBottom] = useState(true);
   const [llmReady, setLlmReady] = useState<boolean>(true);
@@ -223,18 +224,21 @@ export default function ChatThread() {
     assistantIdRef.current = assistantId;
     setMessages((m) => [...m, { id: assistantId, role: "assistant", content: "", createdAt: Date.now() }]);
 
+    let aborted = false;
     try {
       const token = (await storage.get<string>('sb-access-token')) || (await storage.get<string>('accessToken'));
       const user = await storage.get<{ id: string }>("user");
       const base = (import.meta as any)?.env?.VITE_API_BASE_URL || "http://localhost:3000";
       const useVNext = true;
       const endpoint = useVNext ? `${base}/api/v1/agents/n8nAgent/stream-vnext` : `${base}/api/v1/agents/n8nAgent/stream`;
+      abortRef.current = new AbortController();
       const res = await fetch(endpoint, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
+        signal: abortRef.current.signal,
         body: JSON.stringify({
           messages: [{ role: "user", content: text }],
           memory: { thread: threadId, resource: user?.id },
@@ -252,6 +256,7 @@ export default function ChatThread() {
       const reader = res.body.getReader();
       const decoder = new TextDecoder();
       let buffer = "";
+      let anyOutput = false;
 
       const appendText = (delta: string) => {
         if (!delta) return;
@@ -311,6 +316,7 @@ export default function ChatThread() {
               textPart = payload.replace(/^\"|\"$/g, "");
             }
             appendText(textPart);
+            anyOutput = true;
             continue;
           }
           if (line.startsWith("9:")) {
@@ -351,7 +357,7 @@ export default function ChatThread() {
               }
               if (t === 'text-delta') {
                 const token = p?.delta ?? p?.content ?? '';
-                if (typeof token === 'string') appendText(token);
+                if (typeof token === 'string') { appendText(token); anyOutput = true; }
               } else if (t === 'tool-call') {
                 const toolName = p?.toolName || p?.tool?.name || 'tool';
                 const callId = p?.toolCallId || p?.id;
@@ -362,7 +368,7 @@ export default function ChatThread() {
                 addToolResult(toolName, p?.result, callId);
               } else if (p?.delta || p?.token || p?.content) {
                 const token = p?.delta ?? p?.token ?? p?.content ?? '';
-                if (typeof token === 'string') appendText(token);
+                if (typeof token === 'string') { appendText(token); anyOutput = true; }
               }
             } catch {}
             continue;
@@ -382,16 +388,43 @@ export default function ChatThread() {
           // ignore f: and others
         }
       }
+      // Fallback: если стрим оборвался без текстового вывода, попробуем получить полный ответ одним запросом
+      try {
+        if (!anyOutput && !aborted) {
+          const full = await fetch(`${base}/api/v1/agents/n8nAgent/respond`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+            body: JSON.stringify({ messages: [{ role: 'user', content: text }], threadId: threadId, resourceId: user?.id }),
+          });
+          if (full.ok) {
+            const json = await full.json().catch(() => ({} as any));
+            const txt = (json as any)?.text || '';
+            if (txt) setMessages((m) => m.map((msg) => (msg.id === assistantId ? { ...msg, content: msg.content + txt } : msg)));
+          }
+        }
+      } catch {}
     } catch (err: any) {
-      if (err?.status === 401) {
+      if (err?.name === 'AbortError') {
+        aborted = true;
+        // тихое завершение при отмене
+      } else if (err?.status === 401) {
         await storage.clear();
         navigate('/auth/login', { replace: true });
         return;
       }
-      setMessages((m) => m.map((msg) => (msg.id === assistantId ? { ...msg, content: msg.content + "\n[Ошибка]" } : msg)));
+      else {
+        setMessages((m) => m.map((msg) => (msg.id === assistantId ? { ...msg, content: msg.content + "\n[Ошибка]" } : msg)));
+      }
     } finally {
       setLoading(false);
+      abortRef.current = null;
     }
+  }
+
+  function onCancel() {
+    try {
+      abortRef.current?.abort();
+    } catch {}
   }
 
   async function onDeleteThread() {
@@ -456,7 +489,7 @@ export default function ChatThread() {
               {messages.map((m) => {
                 const toolsForMsg = m.role === "assistant" ? toolExecutions.filter((t) => t.messageId === m.id) : [];
                 return (
-                  <div key={m.id} className="message">
+                  <div key={m.id} className={`message ${m.role}`}>
                     <div className="meta">{m.role === "user" ? "Вы" : "Ассистент"}</div>
                     {toolsForMsg.length > 0 && (
                       <div style={{ marginBottom: 6 }}>
@@ -487,7 +520,11 @@ export default function ChatThread() {
             </div>
             <form onSubmit={onSend} className="inputbar">
               <Input disabled={!llmReady || loading} value={input} onChange={(e) => setInput(e.target.value)} placeholder="Сообщение" />
-              <Button disabled={!llmReady || loading} type="submit">{loading ? "Отправка..." : "Отправить"}</Button>
+              {loading ? (
+                <Button type="button" variant="destructive" onClick={onCancel}>Отменить</Button>
+              ) : (
+                <Button disabled={!llmReady} type="submit">Отправить</Button>
+              )}
             </form>
             {!atBottom && (
               <button

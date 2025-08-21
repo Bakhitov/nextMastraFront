@@ -37,7 +37,7 @@
     "dist",
     ".mastra",
     "extension/**",
-    "front/shared/**",
+    "packages/shared/**",
     "mastra/**"
   ]
 }

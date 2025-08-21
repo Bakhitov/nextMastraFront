@@ -7,9 +7,6 @@
     "dev": "pnpm -F @nextmastra/web dev",
     "build": "pnpm -F @nextmastra/web build",
     "start": "pnpm -F @nextmastra/web start",
-    "dev:mastra": "pnpm -F @nextmastra/mastra dev",
-    "build:mastra": "pnpm -F @nextmastra/mastra build",
-    "start:mastra": "pnpm -F @nextmastra/mastra start",
     "dev:ext": "pnpm -F @nextmastra/extension dev",
     "build:ext": "pnpm -F @nextmastra/extension build"
   },
@@ -25,5 +22,6 @@
     "@types/react": "^19.1.10",
     "@types/react-dom": "^19.1.7",
     "typescript": "^5.9.2"
-  }
+  },
+  "packageManager": "pnpm@10.14.0+sha512.ad27a79641b49c3e481a16a805baa71817a04bbe06a38d17e60e2eaee83f6a146c6a688125f5792e48dd5ba30e7da52a5cda4c3992b9ccf333f9ce223af84748"
 }

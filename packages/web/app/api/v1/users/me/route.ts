@@ -5,7 +5,12 @@ import { redisGetJSON, redisSetJSON, getRedis } from "../../../../../lib/redis/c
 
 export async function GET(req: Request) {
   try {
-    const { sub } = await verifyRequest(req);
+    let sub: string | undefined;
+    try {
+      ({ sub } = await verifyRequest(req));
+    } catch (e: any) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
     if (!sub) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     // try cache first
     const cacheKey = `profile:${sub}`;
@@ -24,7 +29,12 @@ export async function GET(req: Request) {
 
 export async function PATCH(req: Request) {
   try {
-    const { sub } = await verifyRequest(req);
+    let sub: string | undefined;
+    try {
+      ({ sub } = await verifyRequest(req));
+    } catch (e: any) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
     if (!sub) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     const body = await req.json();
     // allowlist editable fields from extension

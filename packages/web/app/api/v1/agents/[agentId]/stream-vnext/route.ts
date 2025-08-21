@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
-import { mastraClient } from "../../../../../../lib/mastra/mastra-client";
 import { verifyRequest, rateLimitFreeOrThrow } from "../../../../../../lib/auth/verify";
 import { supabaseAdmin } from "../../../../../../lib/supabase/admin";
+import { MastraClient } from "@mastra/client-js";
 
 async function verify(req: Request) { return verifyRequest(req); }
 
@@ -23,11 +23,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ agentId
     }
     const memory = { thread: incomingMemory?.thread ?? threadId, resource: incomingMemory?.resource ?? resourceId, options: incomingMemory?.options };
 
-    const agent = mastraClient.getAgent(agentId);
-    // Пытаемся использовать vNext, если доступен в текущей версии SDK; иначе фолбэк на обычный stream
-    const maybeStreamVNext = (agent as any)?.streamVNext as
-      | ((args: { messages: any; memory: any; savePerStep?: boolean; runtimeContext?: any; headers?: Record<string, string> }) => Promise<Response>)
-      | undefined;
+    const baseUrl = process.env.MASTRA_BASE_URL || "http://localhost:4111";
     // runtimeContext из профиля пользователя для динамичных настроек
     const { redisGetJSON, redisSetJSON } = await import("../../../../../../lib/redis/client");
     const cacheKey = `profile:${resourceId}`;
@@ -38,40 +34,30 @@ export async function POST(req: Request, { params }: { params: Promise<{ agentId
       profile = data;
       if (profile) await redisSetJSON(cacheKey, profile, 600);
     }
-    const runtimeContext = { get: (k: string) => (profile as any)?.[k] } as any;
+    const client = new MastraClient({
+      baseUrl,
+      headers: {
+        // Internal secret to restrict access to Mastra server
+        ...(process.env.MASTRA_INTERNAL_SECRET ? { 'x-internal-secret': process.env.MASTRA_INTERNAL_SECRET } : {}),
+        "x-provider-llm": (profile as any)?.provider_llm || "",
+        "x-api-key-llm": (profile as any)?.api_key_llm || "",
+        "x-model-llm": (profile as any)?.model_llm || "",
+        "x-role": (profile as any)?.role || "",
+        "x-n8n-url": (profile as any)?.url_by_type || "",
+        "x-n8n-key": (profile as any)?.api_key_by_type || "",
+      },
+    });
+    const agent = client.getAgent(agentId);
+    const upstream = (agent as any).streamVNext
+      ? await (agent as any).streamVNext({ messages, memory, savePerStep: true })
+      : await agent.stream({ messages, memory, savePerStep: true });
 
-    const upstream = maybeStreamVNext
-      ? await maybeStreamVNext({
-          messages,
-          memory,
-          savePerStep: true,
-          runtimeContext,
-          headers: {
-            "x-provider-llm": (profile as any)?.provider_llm || "",
-            "x-api-key-llm": (profile as any)?.api_key_llm || "",
-            "x-model-llm": (profile as any)?.model_llm || "",
-            "x-role": (profile as any)?.role || "",
-            "x-n8n-url": (profile as any)?.url_by_type || "",
-            "x-n8n-key": (profile as any)?.api_key_by_type || "",
-          },
-        })
-      : await agent.stream({
-          messages,
-          memory,
-          runtimeContext,
-          headers: {
-            "x-provider-llm": (profile as any)?.provider_llm || "",
-            "x-api-key-llm": (profile as any)?.api_key_llm || "",
-            "x-model-llm": (profile as any)?.model_llm || "",
-            "x-role": (profile as any)?.role || "",
-            "x-n8n-url": (profile as any)?.url_by_type || "",
-            "x-n8n-key": (profile as any)?.api_key_by_type || "",
-          },
-        });
     const headers = new Headers(upstream.headers);
     if (!headers.get("content-type")) headers.set("content-type", "text/event-stream");
-    headers.set("cache-control", "no-cache");
+    headers.set("cache-control", "no-cache, no-transform");
     headers.set("connection", "keep-alive");
+    headers.set("x-accel-buffering", "no");
+    headers.set("keep-alive", "timeout=120, max=1000");
     return new Response(upstream.body, { status: upstream.status, headers });
   } catch (e: any) {
     const status = e?.status === 429 ? 429 : 400;

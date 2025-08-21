@@ -84,11 +84,14 @@ body {
 .list-item { display: flex; justify-content: space-between; align-items: center; background: var(--panel); border: 1px solid var(--border); border-radius: 10px; padding: 10px; }
 .list-meta { font-size: 11px; color: var(--muted); }
 
-.chat-wrap { display: grid; grid-template-rows: 1fr auto; background: var(--panel); border: 1px solid var(--border); border-radius: 12px; height: 60vh; max-height: 600px; overflow: hidden; }
-.messages { padding: 12px; overflow-y: auto; display: grid; gap: 8px; background: #fafafa; }
-.message { display: grid; gap: 4px; }
+.chat-wrap { display: grid; grid-template-rows: 1fr auto; background: var(--panel); border: 1px solid var(--border); border-radius: 12px; height: 60vh; overflow: hidden; padding-bottom: 10px; }
+.messages { padding: 12px; overflow-y: auto; gap: 8px; background: #fafafa; }
+.message { gap: 4px; }
+.message.user .meta { text-align: right; }
+.message.user .bubble { justify-self: end; text-align: right;}
+.message.assistant .bubble { justify-self: start; text-align: left;}
 .meta { color: var(--muted); font-size: 11px; }
-.bubble { display: inline-block; padding: 10px 12px; border-radius: 12px; line-height: 1.4; max-width: 85%; white-space: pre-wrap; border: 1px solid var(--border); word-break: break-word; }
+.bubble { display: inline-block; padding: 10px 12px; border-radius: 12px; line-height: 1.4; max-width: 85%; white-space: pre-wrap; word-break: break-word; }
 .bubble-user { background: rgba(0,194,168,0.10); border-color: rgba(0,194,168,0.25); }
 .bubble-assistant { background: #ffffff; }
 .inputbar { display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 8px; padding: 8px 10px; border-top: 1px solid var(--border); background: #fcfcfd; }
@@ -108,6 +111,6 @@ body {
 
 /* Accordion content: separate visually from chat */
 .acc-content { margin: 6px 0 10px 0; }
-.tool-panel { background: #ffffff; border: 1px solid var(--border); border-radius: 10px; padding: 10px; box-shadow: var(--shadow); }
-.tool-panel pre { background: #f8fafc; border: 1px solid var(--border); border-radius: 8px; padding: 8px; overflow: auto; }
+.tool-panel { background: #ffffff;  border-radius: 10px; padding: 10px; box-shadow: var(--shadow); }
+.tool-panel pre { background: #f8fafc; border-radius: 8px; padding: 8px; overflow: auto; }
 
