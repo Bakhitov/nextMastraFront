@@ -37,9 +37,9 @@ function ensurePanel(): HTMLElement {
   title.style.fontWeight = "600";
   // label + version + email
   const label = document.createElement("span");
-  label.textContent = "Agent n8n";
+  label.textContent = "Agent";
   const ver = document.createElement("span");
-  ver.textContent = "v0.1";
+  ver.textContent = "n8n(v1.107.4/1)";
   ver.style.fontSize = "11px";
   ver.style.color = "#6b7280";
   ver.style.marginLeft = "6px";

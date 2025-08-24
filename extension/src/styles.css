@@ -86,9 +86,16 @@ body {
 
 .chat-wrap { display: grid; grid-template-rows: 1fr auto; background: var(--panel); border: 1px solid var(--border); border-radius: 12px; height: 60vh; overflow: hidden; padding-bottom: 10px; }
 .messages { padding: 12px; overflow-y: auto; gap: 8px; background: #fafafa; }
-.message { gap: 4px; }
+.message { 
+  gap: 4px; 
+  margin-bottom: 15px;
+  display: flex;
+  flex-direction: column;
+}
 .message.user .meta { text-align: right; }
-.message.user .bubble { justify-self: end; text-align: right;}
+.message.user .bubble { 
+  align-self: flex-end;
+}
 .message.assistant .bubble { justify-self: start; text-align: left;}
 .meta { color: var(--muted); font-size: 11px; }
 .bubble { display: inline-block; padding: 10px 12px; border-radius: 12px; line-height: 1.4; max-width: 85%; white-space: pre-wrap; word-break: break-word; }

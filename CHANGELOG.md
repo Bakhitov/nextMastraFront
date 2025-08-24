@@ -26,6 +26,10 @@
    - extension/src/content.ts: по клику на кнопку панели — проверка `is_active`; при false — предупредить пользователя и не открывать панель.
    - extension/src/lib/api.ts: в тип профиля добавлены поля `role`, `is_active`, `type_agent`.
 - mastra/src/tools/mcp.ts: в окружение процесса `n8n-mcp` добавлена переменная `N8N_COMMUNITY_PACKAGES_ALLOW_TOOL_USAGE` (берётся из `process.env`, по умолчанию "true").
+
+## 2025-08-23
+
+- feat(agent/tools): префикс `agent_` для всех инструментов в инструкциях и отрисовке (соответствие MCP). Core-инструменты для role=free теперь отображаются и вызываются как `agent_tools_documentation`, `agent_list_nodes`, `agent_get_node_info`, `agent_get_node_essentials`, `agent_search_nodes`, `agent_search_node_properties`, `agent_list_ai_tools`, `agent_get_node_as_tool_info`.
 ## 2025-08-17
 
 - Added `next.config.ts` with `serverExternalPackages: ["@mastra/*"]` per Mastra Next.js guide.
